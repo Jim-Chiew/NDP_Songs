@@ -12,8 +12,7 @@ public class Song implements Serializable {
     private int year;
     private int stars;
 
-    public Song(int _id, String title, String singers, int year, int stars) {
-        this._id = _id;
+    public Song(String title, String singers, int year, int stars) {
         this.title = title;
         this.singers = singers;
         this.year = year;
@@ -38,6 +37,10 @@ public class Song implements Serializable {
 
     public int getStars() {
         return stars;
+    }
+
+    public void set_id(int _id) {
+        this._id = _id;
     }
 
     @NonNull

@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
                     star = 1;
                 }
 
-                long inserted_id = db.insertSong(title, singer, year, star);
+                long inserted_id = db.insertSong(new Song(title, singer, year, star));
 
                 if (inserted_id != -1){
                     Toast.makeText(MainActivity.this, "Insert successful",

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class DBHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "songs.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 5;
     private static final String TABLE_NAME = "songs";
     private static final String COLUMN_ID = "_id";
     private static final String COLUMN_TITLE = "title";
@@ -33,6 +33,15 @@ public class DBHelper extends SQLiteOpenHelper {
                 + COLUMN_YEAR + " INTEGER, " + COLUMN_STARs + " INTEGER)";
 
         db.execSQL(createNoteTableSql);
+
+        for (int i = 0; i< 4; i++) {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_TITLE, "Dummy " + i);
+            values.put(COLUMN_SINGERS, "Dummy " + i);
+            values.put(COLUMN_YEAR, 2012);
+            values.put(COLUMN_STARs, 4);
+            db.insert(TABLE_NAME, null, values);
+        }
     }
 
     @Override
@@ -60,8 +69,9 @@ public class DBHelper extends SQLiteOpenHelper {
                 int year = cursor.getInt(3);
                 int star = cursor.getInt(4);
 
-                Song note = new Song(id, title, singer, year, star);
-                songs.add(note);
+                Song song = new Song(title, singer, year, star);
+                song.set_id(id);
+                songs.add(song);
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -69,14 +79,42 @@ public class DBHelper extends SQLiteOpenHelper {
         return songs;
     }
 
-    public long insertSong(String title, String singer, int year, int stars) {
+    public ArrayList<Song> getAllSongsByYear(String yearToFind) {
+        ArrayList<Song> songs = new ArrayList<Song>();
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] columns= {COLUMN_ID, COLUMN_TITLE, COLUMN_SINGERS, COLUMN_YEAR, COLUMN_STARs};
+        String condition = COLUMN_YEAR + " = ?";
+        String[] args = {yearToFind};
+        Cursor cursor = db.query(TABLE_NAME, columns, condition, args,
+                null, null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(0);
+                String title = cursor.getString(1);
+                String singer = cursor.getString(2);
+                int year = cursor.getInt(3);
+                int star = cursor.getInt(4);
+
+                Song song = new Song(title, singer, year, star);
+                song.set_id(id);
+                songs.add(song);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return songs;
+    }
+
+    public long insertSong(Song song) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
 
-        values.put(COLUMN_TITLE, title);
-        values.put(COLUMN_SINGERS, singer);
-        values.put(COLUMN_YEAR, year);
-        values.put(COLUMN_STARs, stars);
+        values.put(COLUMN_TITLE, song.getTitle());
+        values.put(COLUMN_SINGERS, song.getSingers());
+        values.put(COLUMN_YEAR, song.getYear());
+        values.put(COLUMN_STARs, song.getStars());
 
         long result = db.insert(TABLE_NAME, null, values);
         db.close();
@@ -113,17 +151,19 @@ public class DBHelper extends SQLiteOpenHelper {
         return result;
     }
 
-    public ArrayList<Year> GetDistinctYear(){
+    public ArrayList<Year> getDistinctYear(){
         ArrayList<Year> al = new ArrayList<Year>();
 
         String selectQuery = "SELECT DISTINCT " + COLUMN_YEAR
-                + " FROM " + TABLE_NAME;
+                + " FROM " + TABLE_NAME + " ORDER BY " + COLUMN_YEAR + " ASC";
+
+        al.add(new Year(""));
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
         if (cursor.moveToFirst()) {
             do {
-                int year = cursor.getInt(0);
+                String year = cursor.getString(0);
                 al.add(new Year(year));
 
             } while (cursor.moveToNext());

@@ -19,12 +19,14 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-public class ShowSongs extends AppCompatActivity {
+public class ShowSongs extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     Button btn5star;
     ListView lv;
     ArrayList<Song> al = new ArrayList<>();
     ArrayList<Song> al5Star = new ArrayList<>();
-    ArrayAdapter adapter;
+    ArrayList<Year> alYear = new ArrayList<>();
+    ArrayList<Song> alFilterByYear = new ArrayList<>();
+    ArrayAdapter adapter, adapter5star, adapterYear, adapterFilterByYear;
     boolean show5Star = false;
     Spinner spnYear;
 
@@ -35,16 +37,20 @@ public class ShowSongs extends AppCompatActivity {
 
         btn5star = findViewById(R.id.btn5Star);
         lv = findViewById(R.id.lv);
-
         spnYear = findViewById(R.id.spnYear);
-        registerForContextMenu(spnYear);
 
         DBHelper dbh = new DBHelper(ShowSongs.this);
-        al.addAll(dbh.getAllSongs());
 
+        al.addAll(dbh.getAllSongs());
+        alYear.addAll(dbh.getDistinctYear());
+
+        adapter5star = new ArrayAdapter<Song>(this, android.R.layout.simple_list_item_1, al5Star);
         adapter = new ArrayAdapter<Song>(this, android.R.layout.simple_list_item_1, al);
-        ArrayAdapter adapter5star = new ArrayAdapter<Song>(this, android.R.layout.simple_list_item_1, al5Star);
-        lv.setAdapter(adapter);
+        adapterYear = new ArrayAdapter<Year>(this, android.R.layout.simple_spinner_dropdown_item, alYear);
+        adapterFilterByYear = new ArrayAdapter(this, android.R.layout.simple_list_item_1, alFilterByYear);
+
+        spnYear.setAdapter(adapterYear);
+        spnYear.setOnItemSelectedListener(this);
 
         btn5star.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -53,6 +59,7 @@ public class ShowSongs extends AppCompatActivity {
                     show5Star = false;
                     lv.setAdapter(adapter);
                     btn5star.setText(R.string.show_all_songs_with_5_stars);
+                    spnYear.setSelection(0);
 
                 } else {
                     show5Star = true;
@@ -66,6 +73,7 @@ public class ShowSongs extends AppCompatActivity {
 
                     lv.setAdapter(adapter5star);
                     btn5star.setText(R.string.show_all_songs);
+                    spnYear.setSelection(0);
                 }
             }
         });
@@ -88,21 +96,6 @@ public class ShowSongs extends AppCompatActivity {
     }
 
     @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-
-        menu.add(0,0,0,"Show All");
-        menu.add(1, 1, 1, "Show NONE");
-
-        //will continue tomorrow. most likely. maybe.
-    }
-
-    @Override
-    public boolean onContextItemSelected(@NonNull MenuItem item) {
-        return super.onContextItemSelected(item);
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
 
@@ -110,6 +103,35 @@ public class ShowSongs extends AppCompatActivity {
         al.clear();
         al.addAll(dbh.getAllSongs());
         lv.setAdapter(adapter);
+
+        alYear.clear();
+        alYear.addAll(dbh.getDistinctYear());
+        spnYear.setSelection(0);
+
         adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Object data = parent.getItemAtPosition(position);
+        String year = data.toString();
+
+        if (year.length() != 0){
+            DBHelper dbh = new DBHelper(ShowSongs.this);
+            alFilterByYear.clear();
+            alFilterByYear.addAll(dbh.getAllSongsByYear(year));
+            lv.setAdapter(adapterFilterByYear);
+
+            show5Star = true;
+            btn5star.setText(R.string.show_all_songs);
+        } else {
+            show5Star = false;
+            lv.setAdapter(adapter);
+            btn5star.setText(R.string.show_all_songs_with_5_stars);
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
     }
 }

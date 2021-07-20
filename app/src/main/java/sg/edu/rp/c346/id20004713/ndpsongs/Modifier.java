@@ -87,7 +87,8 @@ public class Modifier extends AppCompatActivity {
                     star = 1;
                 }
 
-                Song updated = new Song(data.get_id(), title, singer, year, star);
+                Song updated = new Song(title, singer, year, star);
+                updated.set_id(data.get_id());
 
                 int inserted_id = db.updateSong(updated);
 
